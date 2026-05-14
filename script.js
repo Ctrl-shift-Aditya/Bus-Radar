@@ -9,13 +9,15 @@ import {
 
 
 
+// YOUR FIREBASE CONFIG
+
 const firebaseConfig = {
 
     apiKey: "AIzaSyBi6J7XXCB-8wYP6U3VjDivJpbYZ0oeD2w",
 
     authDomain: "bus-radar-mvp.firebaseapp.com",
 
-    databaseURL: "https://bus-radar-mvp-default-rtdb.firebaseio.com",
+    databaseURL: "https://bus-radar-mvp-default-rtdb.asia-southeast1.firebasedatabase.app",
 
     projectId: "bus-radar-mvp",
 
@@ -28,17 +30,23 @@ const firebaseConfig = {
 
 
 
+// INITIALIZE FIREBASE
+
 const app = initializeApp(firebaseConfig);
 
 const db = getDatabase(app);
 
 
 
+// GET HTML ELEMENTS
+
 const button = document.getElementById("locationBtn");
 
 const output = document.getElementById("output");
 
 
+
+// BUTTON CLICK
 
 button.addEventListener("click", () => {
 
@@ -52,13 +60,43 @@ button.addEventListener("click", () => {
 
 
 
+            console.log("GPS SUCCESS");
+
+            console.log(latitude, longitude);
+
+
+
+            // WRITE TO FIREBASE
+
             set(ref(db, "location"), {
 
                 latitude: latitude,
 
                 longitude: longitude
 
+            })
+
+            .then(() => {
+
+                console.log("DATA SENT TO FIREBASE");
+
+            })
+
+            .catch((error) => {
+
+                console.log("FIREBASE ERROR");
+
+                console.log(error);
+
             });
+
+        },
+
+        (error) => {
+
+            console.log("GPS ERROR");
+
+            console.log(error);
 
         }
 
@@ -67,6 +105,8 @@ button.addEventListener("click", () => {
 });
 
 
+
+// READ LIVE DATA
 
 const locationRef = ref(db, "location");
 
@@ -78,9 +118,18 @@ onValue(locationRef, (snapshot) => {
 
 
 
-    output.textContent =
+    if (data) {
 
-        `Latitude: ${data.latitude},
-         Longitude: ${data.longitude}`;
+        output.textContent =
+
+            `Latitude: ${data.latitude},
+Longitude: ${data.longitude}`;
+
+    }
+    else {
+
+        output.textContent = "No location data yet.";
+
+    }
 
 });
