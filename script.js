@@ -50,21 +50,62 @@ const nameInput = document.getElementById("nameInput");
 
 
 
-// DATABASE REFERENCE
+// DATABASE PATH
 
 const locationRef = ref(db, "location");
 
 
 
-// BUTTON CLICK
+// RECEIVE LIVE DATA
+
+onValue(locationRef, (snapshot) => {
+
+    const data = snapshot.val();
+
+
+
+    if (data) {
+
+        broadcaster.textContent =
+            `${data.broadcaster} is currently broadcasting`;
+
+
+
+        output.textContent =
+`Latitude: ${data.latitude}
+Longitude: ${data.longitude}`;
+
+    }
+
+    else {
+
+        broadcaster.textContent =
+            "Nobody is broadcasting yet.";
+
+
+
+        output.textContent =
+            "Waiting for live location...";
+
+    }
+
+});
+
+
+
+// START TRACKING ONLY AFTER BUTTON CLICK
 
 button.addEventListener("click", () => {
 
-    const userName = nameInput.value;
+    console.log("BUTTON CLICKED");
 
 
 
-    if (userName.trim() === "") {
+    const userName = nameInput.value.trim();
+
+
+
+    if (userName === "") {
 
         alert("Please enter your name");
 
@@ -82,17 +123,21 @@ button.addEventListener("click", () => {
 
         (position) => {
 
+            console.log("GPS SUCCESS");
+
+
+
             const latitude = position.coords.latitude;
 
             const longitude = position.coords.longitude;
 
 
 
-            console.log("LIVE GPS UPDATE");
+            console.log(latitude, longitude);
 
 
 
-            // SEND TO FIREBASE
+            // SEND DATA TO FIREBASE
 
             set(locationRef, {
 
@@ -108,11 +153,13 @@ button.addEventListener("click", () => {
 
             .then(() => {
 
-                console.log("LIVE LOCATION SENT");
+                console.log("LOCATION SENT");
 
             })
 
             .catch((error) => {
+
+                console.log("FIREBASE ERROR");
 
                 console.log(error);
 
@@ -121,6 +168,8 @@ button.addEventListener("click", () => {
         },
 
         (error) => {
+
+            console.log("GPS ERROR");
 
             console.log(error);
 
@@ -137,40 +186,5 @@ button.addEventListener("click", () => {
         }
 
     );
-
-});
-
-
-
-// RECEIVE LIVE DATA
-
-onValue(locationRef, (snapshot) => {
-
-    const data = snapshot.val();
-
-
-
-    if (data) {
-
-        output.textContent =
-
-`Latitude: ${data.latitude}
-Longitude: ${data.longitude}`;
-
-
-
-        broadcaster.textContent =
-
-`${data.broadcaster} is currently broadcasting location`;
-
-    }
-
-    else {
-
-        output.textContent = "No location data yet.";
-
-        broadcaster.textContent = "Nobody is broadcasting yet.";
-
-    }
 
 });
