@@ -9,7 +9,7 @@ import {
 
 
 
-// YOUR FIREBASE CONFIG
+// FIREBASE CONFIG
 
 const firebaseConfig = {
 
@@ -46,11 +46,17 @@ const output = document.getElementById("output");
 
 
 
-// BUTTON CLICK
+// DATABASE REFERENCE
+
+const locationRef = ref(db, "location");
+
+
+
+// START LIVE GPS TRACKING
 
 button.addEventListener("click", () => {
 
-    navigator.geolocation.getCurrentPosition(
+    navigator.geolocation.watchPosition(
 
         (position) => {
 
@@ -60,25 +66,27 @@ button.addEventListener("click", () => {
 
 
 
-            console.log("GPS SUCCESS");
+            console.log("LIVE GPS UPDATE");
 
             console.log(latitude, longitude);
 
 
 
-            // WRITE TO FIREBASE
+            // SEND TO FIREBASE
 
-            set(ref(db, "location"), {
+            set(locationRef, {
 
                 latitude: latitude,
 
-                longitude: longitude
+                longitude: longitude,
+
+                timestamp: Date.now()
 
             })
 
             .then(() => {
 
-                console.log("DATA SENT TO FIREBASE");
+                console.log("LIVE LOCATION SENT");
 
             })
 
@@ -90,6 +98,8 @@ button.addEventListener("click", () => {
 
             });
 
+
+
         },
 
         (error) => {
@@ -97,6 +107,16 @@ button.addEventListener("click", () => {
             console.log("GPS ERROR");
 
             console.log(error);
+
+        },
+
+        {
+
+            enableHighAccuracy: true,
+
+            maximumAge: 0,
+
+            timeout: 5000
 
         }
 
@@ -106,11 +126,7 @@ button.addEventListener("click", () => {
 
 
 
-// READ LIVE DATA
-
-const locationRef = ref(db, "location");
-
-
+// RECEIVE LIVE DATA FROM FIREBASE
 
 onValue(locationRef, (snapshot) => {
 
@@ -122,10 +138,13 @@ onValue(locationRef, (snapshot) => {
 
         output.textContent =
 
-            `Latitude: ${data.latitude},
+`Latitude: ${data.latitude}
 Longitude: ${data.longitude}`;
 
+        console.log("LIVE DATA RECEIVED");
+
     }
+
     else {
 
         output.textContent = "No location data yet.";
