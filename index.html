@@ -1,21 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bus Radar MVP</title>
 </head>
+
 <body>
 
     <h1>Bus Radar MVP</h1>
 
-    <h2>Your Current GPS</h2>
-    <p id="myLocation">Waiting for GPS...</p>
+    <button id="locationBtn">
+        Start Live Tracking
+    </button>
 
-    <h2>Live Bus Location From Firebase</h2>
-    <p id="liveLocation">Waiting for Firebase data...</p>
+    <h2>Live Location</h2>
+
+    <p id="output">
+        Waiting for data...
+    </p>
 
     <script type="module" src="script.js"></script>
 
 </body>
+
 </html>
