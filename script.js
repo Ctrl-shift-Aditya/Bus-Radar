@@ -38,11 +38,15 @@ const db = getDatabase(app);
 
 
 
-// GET HTML ELEMENTS
+// HTML ELEMENTS
 
 const button = document.getElementById("locationBtn");
 
 const output = document.getElementById("output");
+
+const broadcaster = document.getElementById("broadcaster");
+
+const nameInput = document.getElementById("nameInput");
 
 
 
@@ -52,9 +56,27 @@ const locationRef = ref(db, "location");
 
 
 
-// START LIVE GPS TRACKING
+// BUTTON CLICK
 
 button.addEventListener("click", () => {
+
+    const userName = nameInput.value;
+
+
+
+    if (userName.trim() === "") {
+
+        alert("Please enter your name");
+
+        return;
+
+    }
+
+
+
+    console.log("TRACKING STARTED");
+
+
 
     navigator.geolocation.watchPosition(
 
@@ -68,8 +90,6 @@ button.addEventListener("click", () => {
 
             console.log("LIVE GPS UPDATE");
 
-            console.log(latitude, longitude);
-
 
 
             // SEND TO FIREBASE
@@ -79,6 +99,8 @@ button.addEventListener("click", () => {
                 latitude: latitude,
 
                 longitude: longitude,
+
+                broadcaster: userName,
 
                 timestamp: Date.now()
 
@@ -92,19 +114,13 @@ button.addEventListener("click", () => {
 
             .catch((error) => {
 
-                console.log("FIREBASE ERROR");
-
                 console.log(error);
 
             });
 
-
-
         },
 
         (error) => {
-
-            console.log("GPS ERROR");
 
             console.log(error);
 
@@ -126,7 +142,7 @@ button.addEventListener("click", () => {
 
 
 
-// RECEIVE LIVE DATA FROM FIREBASE
+// RECEIVE LIVE DATA
 
 onValue(locationRef, (snapshot) => {
 
@@ -141,13 +157,19 @@ onValue(locationRef, (snapshot) => {
 `Latitude: ${data.latitude}
 Longitude: ${data.longitude}`;
 
-        console.log("LIVE DATA RECEIVED");
+
+
+        broadcaster.textContent =
+
+`${data.broadcaster} is currently broadcasting location`;
 
     }
 
     else {
 
         output.textContent = "No location data yet.";
+
+        broadcaster.textContent = "Nobody is broadcasting yet.";
 
     }
 
