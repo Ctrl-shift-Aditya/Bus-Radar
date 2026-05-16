@@ -85,7 +85,8 @@ startBtn.addEventListener("click", () => {
 
 
 
-    // PREVENT MULTIPLE WATCHERS
+    // PREVENT DUPLICATE WATCHERS
+
     if (watchId !== null) {
 
         navigator.geolocation.clearWatch(watchId);
@@ -115,13 +116,31 @@ startBtn.addEventListener("click", () => {
 
             set(userRef, {
 
+                name: currentUser,
+
                 latitude: latitude,
 
                 longitude: longitude,
 
-                active: true,
-
                 timestamp: Date.now()
+
+            })
+
+            .then(() => {
+
+                console.log(
+                    "Firebase write success"
+                );
+
+            })
+
+            .catch((error) => {
+
+                console.log(
+                    "Firebase write failed"
+                );
+
+                console.log(error);
 
             });
 
@@ -172,7 +191,7 @@ stopBtn.addEventListener("click", () => {
 
 
 
-    // REMOVE USER FROM FIREBASE
+    // REMOVE USER DATA
 
     if (currentUser !== "") {
 
@@ -219,7 +238,7 @@ onValue(broadcastersRef, (snapshot) => {
 
 
 
-    // SHOW ALL BROADCASTERS
+    // SHOW ALL USERS
 
     for (const user in data) {
 
@@ -236,7 +255,10 @@ onValue(broadcastersRef, (snapshot) => {
 
             <hr>
 
-            <h3>${user} is broadcasting</h3>
+            <h3>
+                ${broadcaster.name}
+                is broadcasting
+            </h3>
 
             <p>
                 Latitude:
@@ -246,6 +268,11 @@ onValue(broadcastersRef, (snapshot) => {
             <p>
                 Longitude:
                 ${broadcaster.longitude}
+            </p>
+
+            <p>
+                Timestamp:
+                ${broadcaster.timestamp}
             </p>
 
         `;
