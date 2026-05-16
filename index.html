@@ -3,7 +3,10 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
     <title>Bus Radar MVP</title>
 </head>
 
@@ -11,29 +14,33 @@
 
     <h1>Bus Radar MVP</h1>
 
+    <h3>Enter Your Name</h3>
+
     <input
         type="text"
         id="nameInput"
-        placeholder="Enter your name"
+        placeholder="Your name"
     >
 
     <br><br>
 
-    <button id="locationBtn">
+    <button id="startBtn">
         Start Live Tracking
     </button>
 
-    <h2>Current Broadcaster</h2>
+    <button id="stopBtn">
+        Stop Tracking
+    </button>
 
-    <p id="broadcaster">
-        Nobody is broadcasting yet.
-    </p>
+    <hr>
 
-    <h2>Live Location</h2>
+    <h2>Active Broadcasters</h2>
 
-    <p id="output">
-        Waiting for live location...
-    </p>
+    <div id="broadcastersContainer">
+
+        No active broadcasters.
+
+    </div>
 
     <script type="module" src="script.js"></script>
 

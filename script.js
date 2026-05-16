@@ -1,11 +1,14 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
 
 import {
     getDatabase,
     ref,
     set,
+    remove,
     onValue
-} from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
+}
+from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
 
 
 
@@ -17,7 +20,8 @@ const firebaseConfig = {
 
     authDomain: "bus-radar-mvp.firebaseapp.com",
 
-    databaseURL: "https://bus-radar-mvp-default-rtdb.asia-southeast1.firebasedatabase.app",
+    databaseURL:
+    "https://bus-radar-mvp-default-rtdb.asia-southeast1.firebasedatabase.app",
 
     projectId: "bus-radar-mvp",
 
@@ -25,7 +29,8 @@ const firebaseConfig = {
 
     messagingSenderId: "784601192060",
 
-    appId: "1:784601192060:web:549753dcb64972ef009bf9"
+    appId:
+    "1:784601192060:web:549753dcb64972ef009bf9"
 };
 
 
@@ -40,128 +45,83 @@ const db = getDatabase(app);
 
 // HTML ELEMENTS
 
-const button = document.getElementById("locationBtn");
+const startBtn =
+    document.getElementById("startBtn");
 
-const output = document.getElementById("output");
+const stopBtn =
+    document.getElementById("stopBtn");
 
-const broadcaster = document.getElementById("broadcaster");
+const nameInput =
+    document.getElementById("nameInput");
 
-const nameInput = document.getElementById("nameInput");
-
-
-
-// DATABASE PATH
-
-const locationRef = ref(db, "location");
+const broadcastersContainer =
+    document.getElementById("broadcastersContainer");
 
 
 
-// RECEIVE LIVE DATA
+// VARIABLES
 
-onValue(locationRef, (snapshot) => {
+let watchId = null;
 
-    const data = snapshot.val();
-
-
-
-    if (data) {
-
-        broadcaster.textContent =
-            `${data.broadcaster} is currently broadcasting`;
+let currentUser = "";
 
 
 
-        output.textContent =
-`Latitude: ${data.latitude}
-Longitude: ${data.longitude}`;
+// START TRACKING
 
-    }
+startBtn.addEventListener("click", () => {
 
-    else {
-
-        broadcaster.textContent =
-            "Nobody is broadcasting yet.";
+    currentUser =
+        nameInput.value.trim();
 
 
 
-        output.textContent =
-            "Waiting for live location...";
-
-    }
-
-});
-
-
-
-// START TRACKING ONLY AFTER BUTTON CLICK
-
-button.addEventListener("click", () => {
-
-    console.log("BUTTON CLICKED");
-
-
-
-    const userName = nameInput.value.trim();
-
-
-
-    if (userName === "") {
+    if (currentUser === "") {
 
         alert("Please enter your name");
 
         return;
-
     }
 
 
 
-    console.log("TRACKING STARTED");
+    // PREVENT MULTIPLE WATCHERS
+    if (watchId !== null) {
+
+        navigator.geolocation.clearWatch(watchId);
+    }
 
 
 
-    navigator.geolocation.watchPosition(
+    const userRef =
+        ref(db, `broadcasters/${currentUser}`);
+
+
+
+    watchId =
+        navigator.geolocation.watchPosition(
 
         (position) => {
 
-            console.log("GPS SUCCESS");
+            const latitude =
+                position.coords.latitude;
 
-
-
-            const latitude = position.coords.latitude;
-
-            const longitude = position.coords.longitude;
-
-
-
-            console.log(latitude, longitude);
+            const longitude =
+                position.coords.longitude;
 
 
 
             // SEND DATA TO FIREBASE
 
-            set(locationRef, {
+            set(userRef, {
 
                 latitude: latitude,
 
                 longitude: longitude,
 
-                broadcaster: userName,
+                active: true,
 
                 timestamp: Date.now()
-
-            })
-
-            .then(() => {
-
-                console.log("LOCATION SENT");
-
-            })
-
-            .catch((error) => {
-
-                console.log("FIREBASE ERROR");
-
-                console.log(error);
 
             });
 
@@ -186,5 +146,116 @@ button.addEventListener("click", () => {
         }
 
     );
+
+
+
+    console.log(
+        currentUser + " started broadcasting"
+    );
+
+});
+
+
+
+// STOP TRACKING
+
+stopBtn.addEventListener("click", () => {
+
+    // STOP GPS WATCHER
+
+    if (watchId !== null) {
+
+        navigator.geolocation.clearWatch(watchId);
+
+        watchId = null;
+    }
+
+
+
+    // REMOVE USER FROM FIREBASE
+
+    if (currentUser !== "") {
+
+        remove(
+            ref(db,
+            `broadcasters/${currentUser}`)
+        );
+
+        console.log(
+            currentUser + " stopped broadcasting"
+        );
+    }
+
+});
+
+
+
+// RECEIVE LIVE BROADCASTERS
+
+const broadcastersRef =
+    ref(db, "broadcasters");
+
+
+
+onValue(broadcastersRef, (snapshot) => {
+
+    const data = snapshot.val();
+
+
+
+    broadcastersContainer.innerHTML = "";
+
+
+
+    // NO ACTIVE USERS
+
+    if (!data) {
+
+        broadcastersContainer.innerHTML =
+            "No active broadcasters.";
+
+        return;
+    }
+
+
+
+    // SHOW ALL BROADCASTERS
+
+    for (const user in data) {
+
+        const broadcaster = data[user];
+
+
+
+        const broadcasterDiv =
+            document.createElement("div");
+
+
+
+        broadcasterDiv.innerHTML = `
+
+            <hr>
+
+            <h3>${user} is broadcasting</h3>
+
+            <p>
+                Latitude:
+                ${broadcaster.latitude}
+            </p>
+
+            <p>
+                Longitude:
+                ${broadcaster.longitude}
+            </p>
+
+        `;
+
+
+
+        broadcastersContainer.appendChild(
+            broadcasterDiv
+        );
+
+    }
 
 });
