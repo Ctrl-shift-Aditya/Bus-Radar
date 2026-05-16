@@ -1,5 +1,5 @@
 import { initializeApp }
-from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+    from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
 
 import {
     getDatabase,
@@ -8,7 +8,7 @@ import {
     remove,
     onValue
 }
-from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
+    from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
 
 
 
@@ -21,7 +21,7 @@ const firebaseConfig = {
     authDomain: "bus-radar-mvp.firebaseapp.com",
 
     databaseURL:
-    "https://bus-radar-mvp-default-rtdb.asia-southeast1.firebasedatabase.app",
+        "https://bus-radar-mvp-default-rtdb.asia-southeast1.firebasedatabase.app",
 
     projectId: "bus-radar-mvp",
 
@@ -30,7 +30,7 @@ const firebaseConfig = {
     messagingSenderId: "784601192060",
 
     appId:
-    "1:784601192060:web:549753dcb64972ef009bf9"
+        "1:784601192060:web:549753dcb64972ef009bf9"
 };
 
 
@@ -43,6 +43,23 @@ const db = getDatabase(app);
 
 
 
+// INITIALIZE MAP (Leaflet + OpenStreetMap)
+
+const map = L.map("map").setView(
+    [12.9716, 77.5946], 13
+);
+
+L.tileLayer(
+    "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+    {
+        maxZoom: 19,
+        attribution:
+            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }
+).addTo(map);
+
+
+
 // HTML ELEMENTS
 
 const startBtn =
@@ -51,11 +68,11 @@ const startBtn =
 const stopBtn =
     document.getElementById("stopBtn");
 
-const nameInput =
-    document.getElementById("nameInput");
+const busNumberInput =
+    document.getElementById("busNumberInput");
 
-const broadcastersContainer =
-    document.getElementById("broadcastersContainer");
+const statusText =
+    document.getElementById("statusText");
 
 
 
@@ -63,22 +80,25 @@ const broadcastersContainer =
 
 let watchId = null;
 
-let currentUser = "";
+let currentBusNumber = "";
+
+const deviceId = crypto.randomUUID();
+
+// Track markers: busNumber → Leaflet marker
+const busMarkers = new Map();
 
 
 
-// START TRACKING
+// START BROADCASTING
 
 startBtn.addEventListener("click", () => {
 
-    currentUser =
-        nameInput.value.trim();
+    currentBusNumber =
+        busNumberInput.value.trim();
 
+    if (currentBusNumber === "") {
 
-
-    if (currentUser === "") {
-
-        alert("Please enter your name");
+        alert("Please enter a bus number");
 
         return;
     }
@@ -94,89 +114,101 @@ startBtn.addEventListener("click", () => {
 
 
 
-    const userRef =
-        ref(db, `broadcasters/${currentUser}`);
+    const busRef =
+        ref(db, `buses/${currentBusNumber}`);
 
 
 
     watchId =
         navigator.geolocation.watchPosition(
 
-        (position) => {
+            (position) => {
 
-            const latitude =
-                position.coords.latitude;
+                const lat =
+                    position.coords.latitude;
 
-            const longitude =
-                position.coords.longitude;
+                const lng =
+                    position.coords.longitude;
 
 
 
-            // SEND DATA TO FIREBASE
+                // SEND DATA TO FIREBASE
 
-            set(userRef, {
+                set(busRef, {
 
-                name: currentUser,
+                    lat: lat,
 
-                latitude: latitude,
+                    lng: lng,
 
-                longitude: longitude,
+                    timestamp: Date.now(),
 
-                timestamp: Date.now()
+                    deviceId: deviceId
 
-            })
+                })
 
-            .then(() => {
+                    .then(() => {
 
-                console.log(
-                    "Firebase write success"
-                );
+                        console.log(
+                            "Location sent for bus " +
+                            currentBusNumber
+                        );
 
-            })
+                    })
 
-            .catch((error) => {
+                    .catch((error) => {
 
-                console.log(
-                    "Firebase write failed"
-                );
+                        console.log(
+                            "Firebase write failed"
+                        );
+
+                        console.log(error);
+
+                    });
+
+            },
+
+            (error) => {
+
+                console.log("GPS ERROR");
 
                 console.log(error);
 
-            });
+            },
 
-        },
+            {
 
-        (error) => {
+                enableHighAccuracy: true,
 
-            console.log("GPS ERROR");
+                maximumAge: 0,
 
-            console.log(error);
+                timeout: 5000
 
-        },
+            }
 
-        {
-
-            enableHighAccuracy: true,
-
-            maximumAge: 0,
-
-            timeout: 5000
-
-        }
-
-    );
+        );
 
 
+
+    // UPDATE UI STATE
+
+    statusText.textContent =
+        "Broadcasting bus " + currentBusNumber;
+
+    statusText.classList.add("active");
+
+    startBtn.disabled = true;
+
+    busNumberInput.disabled = true;
 
     console.log(
-        currentUser + " started broadcasting"
+        "Broadcasting bus " + currentBusNumber
     );
 
 });
 
 
 
-// STOP TRACKING
+// STOP BROADCASTING
 
 stopBtn.addEventListener("click", () => {
 
@@ -191,97 +223,140 @@ stopBtn.addEventListener("click", () => {
 
 
 
-    // REMOVE USER DATA
+    // REMOVE BUS DATA FROM FIREBASE
 
-    if (currentUser !== "") {
+    if (currentBusNumber !== "") {
 
         remove(
             ref(db,
-            `broadcasters/${currentUser}`)
+                `buses/${currentBusNumber}`)
         );
 
         console.log(
-            currentUser + " stopped broadcasting"
+            "Stopped broadcasting bus " +
+            currentBusNumber
         );
+
+        currentBusNumber = "";
     }
+
+
+
+    // UPDATE UI STATE
+
+    statusText.textContent = "Not broadcasting";
+
+    statusText.classList.remove("active");
+
+    startBtn.disabled = false;
+
+    busNumberInput.disabled = false;
 
 });
 
 
 
-// RECEIVE LIVE BROADCASTERS
+// RECEIVE LIVE BUS UPDATES & UPDATE MAP MARKERS
 
-const broadcastersRef =
-    ref(db, "broadcasters");
+const busesRef = ref(db, "buses");
 
+// Staleness thresholds (milliseconds)
+const STALE_MS = 2 * 60 * 1000;   // 2 minutes
+const DEAD_MS = 5 * 60 * 1000;    // 5 minutes
 
-
-onValue(broadcastersRef, (snapshot) => {
+onValue(busesRef, (snapshot) => {
 
     const data = snapshot.val();
 
+    const now = Date.now();
+
+    // Track which buses are in this snapshot
+    const activeBuses = new Set();
 
 
-    broadcastersContainer.innerHTML = "";
+
+    if (data) {
+
+        for (const busNumber in data) {
+
+            const bus = data[busNumber];
+
+            const age = now - bus.timestamp;
 
 
 
-    // NO ACTIVE USERS
+            // SKIP DEAD BUSES (older than 5 min)
 
-    if (!data) {
+            if (age > DEAD_MS) {
 
-        broadcastersContainer.innerHTML =
-            "No active broadcasters.";
+                continue;
+            }
 
-        return;
+
+
+            activeBuses.add(busNumber);
+
+            const latLng =
+                L.latLng(bus.lat, bus.lng);
+
+            const isStale = age > STALE_MS;
+
+
+
+            if (busMarkers.has(busNumber)) {
+
+                // MOVE EXISTING MARKER
+
+                const marker =
+                    busMarkers.get(busNumber);
+
+                marker.setLatLng(latLng);
+
+                // Update opacity for staleness
+                marker.setOpacity(
+                    isStale ? 0.4 : 1.0
+                );
+
+            } else {
+
+                // CREATE NEW MARKER
+
+                const marker = L.marker(latLng, {
+                    opacity: isStale ? 0.4 : 1.0
+                })
+                    .addTo(map)
+                    .bindTooltip(
+                        "Bus " + busNumber,
+                        {
+                            permanent: true,
+                            direction: "top",
+                            className:
+                                "bus-tooltip"
+                        }
+                    );
+
+                busMarkers.set(busNumber, marker);
+
+            }
+
+        }
+
     }
 
 
 
-    // SHOW ALL USERS
+    // REMOVE MARKERS FOR BUSES NO LONGER ACTIVE
 
-    for (const user in data) {
+    for (const [busNumber, marker]
+        of busMarkers) {
 
-        const broadcaster = data[user];
+        if (!activeBuses.has(busNumber)) {
 
+            map.removeLayer(marker);
 
+            busMarkers.delete(busNumber);
 
-        const broadcasterDiv =
-            document.createElement("div");
-
-
-
-        broadcasterDiv.innerHTML = `
-
-            <hr>
-
-            <h3>
-                ${broadcaster.name}
-                is broadcasting
-            </h3>
-
-            <p>
-                Latitude:
-                ${broadcaster.latitude}
-            </p>
-
-            <p>
-                Longitude:
-                ${broadcaster.longitude}
-            </p>
-
-            <p>
-                Timestamp:
-                ${broadcaster.timestamp}
-            </p>
-
-        `;
-
-
-
-        broadcastersContainer.appendChild(
-            broadcasterDiv
-        );
+        }
 
     }
 

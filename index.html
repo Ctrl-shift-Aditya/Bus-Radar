@@ -5,45 +5,56 @@
 
     <meta charset="UTF-8">
 
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Bus Radar MVP</title>
+    <title>Bus Radar</title>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
 
 </head>
 
 <body>
 
-    <h1>Bus Radar MVP</h1>
+    <!-- FULLSCREEN MAP -->
+    <div id="map"></div>
 
-    <h3>Enter Your Name</h3>
+    <!-- CONTROL PANEL (overlaid on map) -->
+    <div id="controls">
 
-    <input
-        type="text"
-        id="nameInput"
-        placeholder="Enter your name"
-    >
+        <h2 id="appTitle">🚌 Bus Radar</h2>
 
-    <br><br>
+        <label for="busNumberInput">Bus Number</label>
 
-    <button id="startBtn">
-        Start Live Tracking
-    </button>
+        <input type="text"
+            id="busNumberInput"
+            placeholder="e.g. 42, 7A, Route 5"
+            autocomplete="off">
 
-    <button id="stopBtn">
-        Stop Tracking
-    </button>
+        <div id="buttonRow">
 
-    <hr>
+            <button id="startBtn">
+                Start Broadcasting
+            </button>
 
-    <h2>Live Broadcasters</h2>
+            <button id="stopBtn">
+                Stop
+            </button>
 
-    <div id="broadcastersContainer">
+        </div>
 
-        No active broadcasters.
+        <p id="statusText">Not broadcasting</p>
 
     </div>
 
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- App Logic -->
     <script type="module" src="script.js"></script>
 
 </body>
